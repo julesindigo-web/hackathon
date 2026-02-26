@@ -13,10 +13,11 @@ import numpy as np
 from core.models import Vulnerability, Severity, VulnerabilitySource
 from agents.scanner_agent import ScannerAgent
 from agents.analyzer_agent import AnalyzerAgent, AnalyzedVulnerability
-from agents.remediation_agent import RemediationAgent
+from agents.remediation_agent import RemediationAgent, AppliedFix
 from agents.compliance_agent import ComplianceAgent, ComplianceReport
 from agents.monitoring_agent import MonitoringAgent, SecurityMetrics
 from agents.knowledge_graph_agent import KnowledgeGraphAgent
+from app.orchestrator import SecurityOrchestrator
 from core.config import Settings
 
 

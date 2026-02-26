@@ -18,6 +18,7 @@ from core.knowledge_graph import (
     query_context, predict_risk_areas, get_historical_patterns,
     estimate_remediation_effort
 )
+from core.models import Vulnerability, AnalyzedVulnerability, RemediationPlan
 
 
 class TestKnowledgeGraphInitialization:

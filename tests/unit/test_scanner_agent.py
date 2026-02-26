@@ -14,6 +14,7 @@ from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from agents.scanner_agent import ScannerAgent, ScanResult
+from core.models import Vulnerability, Severity, VulnerabilitySource
 
 
 class TestScannerAgent:
