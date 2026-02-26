@@ -33,6 +33,12 @@ class TriageAction(str, Enum):
     HUMAN_REVIEW = "human_review"
     DISCARD = "discard"
 
+class AnalysisStatus(str, Enum):
+    """Analysis status"""
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
 
 class RemediationStatus(str, Enum):
     """Remediation plan status"""
@@ -50,6 +56,7 @@ class ComplianceFramework(str, Enum):
     GDPR = "GDPR"
     PCI_DSS = "PCI-DSS"
     ISO27001 = "ISO27001"
+    NIST_CSF = "NIST-CSF"
 
 
 class Vulnerability(BaseModel):
@@ -126,6 +133,14 @@ class KnowledgeGraphNode(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
+class KnowledgeGraphEdge(BaseModel):
+    """Edge in knowledge graph"""
+    source_id: str
+    target_id: str
+    relationship: str
+    weight: float = 1.0
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
 
 class VulnerabilityNode(KnowledgeGraphNode):
     """Vulnerability node in knowledge graph"""
@@ -174,7 +189,16 @@ class FixPatternNode(KnowledgeGraphNode):
     avg_fix_time: float = Field(..., description="Average hours to apply")
     usage_count: int = 0
 
-
+class FixPattern(BaseModel):
+    """Fix pattern representation"""
+    pattern_id: str
+    name: str
+    description: str
+    target_vulnerability_type: str
+    target_language: str
+    patch_template: str
+    confidence_threshold: float
+    
 class RiskArea(BaseModel):
     """Predicted risk area"""
     file_path: str
@@ -217,17 +241,168 @@ class SecurityPlan(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
-class Metrics(BaseModel):
+class GraphQuery(BaseModel):
+    """Query structure for knowledge graph"""
+    query: str
+    project_id: Optional[int] = None
+    node_types: Optional[List[str]] = None
+    limit: int = 10
+
+class DeveloperExpertise(BaseModel):
+    """Developer security expertise profile"""
+    username: str
+    overall_score: float = Field(..., ge=0, le=1)
+    languages: Dict[str, float] = Field(default_factory=dict)
+    frameworks: Dict[str, float] = Field(default_factory=dict)
+    vulnerability_types_fixed: Dict[str, int] = Field(default_factory=dict)
+    avg_remediation_time_hours: Optional[float] = None
+    last_active: datetime = Field(default_factory=datetime.utcnow)
+
+class FixPatternSuccess(BaseModel):
+    """Tracking of fix pattern effectiveness"""
+    pattern_id: str
+    vulnerability_type: str
+    attempts: int = 0
+    successes: int = 0
+    failures: int = 0
+    avg_confidence: float = 0.0
+    last_used: datetime = Field(default_factory=datetime.utcnow)
+
+class ProjectContext(BaseModel):
+    """Project context compiled from knowledge graph"""
+    project_id: int
+    recent_vulnerabilities: List[Dict[str, Any]] = Field(default_factory=list)
+    active_developers: List[Dict[str, Any]] = Field(default_factory=list)
+    high_risk_files: List[Dict[str, Any]] = Field(default_factory=list)
+    compliance_status: Dict[str, Any] = Field(default_factory=dict)
+    security_posture_trend: List[Dict[str, Any]] = Field(default_factory=list)
+    generated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class GraphTraversal(BaseModel):
+    """Result of traversing the knowledge graph"""
+    nodes: List[Dict[str, Any]]
+    edges: List[Dict[str, Any]]
+    path_score: float = 1.0
+
+class SecurityMetrics(BaseModel):
     """Security metrics for dashboard"""
+    project_id: int
+    security_posture_score: float = Field(..., ge=0, le=100)
     mttr_days: float = Field(..., description="Mean time to remediate")
     total_vulnerabilities: int
     open_vulnerabilities: int
+    critical_vulnerabilities: int = 0
     auto_fix_rate: float = Field(..., ge=0, le=1, description="Percentage auto-fixed")
     true_positive_rate: float = Field(..., ge=0, le=1)
     false_positive_rate: float = Field(..., ge=0, le=1)
     compliance_status: Dict[ComplianceFramework, bool] = Field(default_factory=dict)
     vulnerability_trend: List[Dict[str, Any]] = Field(default_factory=list)
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
 
+
+class AlertStatus(str, Enum):
+    """Status of alert"""
+    ACTIVE = "active"
+    ACKNOWLEDGED = "acknowledged"
+    RESOLVED = "resolved"
+
+class AlertSeverity(str, Enum):
+    """Alert severity levels"""
+    INFO = "info"
+    WARNING = "warning"
+    CRITICAL = "critical"
+
+class Alert(BaseModel):
+    """Alert representation"""
+    alert_id: str
+    title: str
+    description: str
+    severity: AlertSeverity
+    status: AlertStatus
+    project_id: int
+    metric_name: str
+    current_value: float
+    threshold_value: float
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    resolved_at: Optional[datetime] = None
+
+
+class ScannerArtifact(BaseModel):
+    """Artifact downloaded from GitLab CI/CD"""
+    file_path: str
+    scanner_name: str
+    file_format: str
+    content: Any
+    job_name: str
+    pipeline_id: int
+    project_id: int
+
+class GitLabProject(BaseModel):
+    """GitLab project representation"""
+    id: int
+    name: str
+    path_with_namespace: str
+    default_branch: str
+
+class GitLabMergeRequest(BaseModel):
+    """GitLab merge request representation"""
+    iid: int
+    project_id: int
+    title: str
+    pipeline: Optional[Dict[str, Any]] = None
+
+class GitLabCommit(BaseModel):
+    """GitLab commit representation"""
+    id: str
+    short_id: str
+    title: str
+    message: str
+    author_name: str
+    author_email: str
+    created_at: datetime
+
+class RemediationPlan(BaseModel):
+    """Remediation plan generated by Remediation Agent"""
+    vulnerability_id: str
+    status: RemediationStatus
+    patterns_applied: List[str] = Field(default_factory=list)
+    diff: Optional[str] = None
+    fix_mr_url: Optional[str] = None
+    failure_reason: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class ComplianceStatus(str, Enum):
+    """Status of compliance check"""
+    COMPLIANT = "compliant"
+    NON_COMPLIANT = "non_compliant"
+    NOT_APPLICABLE = "not_applicable"
+    PENDING = "pending"
+
+class ComplianceRequirement(BaseModel):
+    requirement_id: str
+    framework: ComplianceFramework
+    name: str
+    description: str
+    vulnerability_types: List[str] = Field(default_factory=list)
+    severity_threshold: List[Severity] = Field(default_factory=list)
+    is_compliant: bool = False
+    violations: List[str] = Field(default_factory=list)
+
+class FrameworkStatus(BaseModel):
+    framework: ComplianceFramework
+    is_compliant: bool = False
+    score: float = 0.0
+    passed_controls: int = 0
+    failed_controls: int = 0
+    total_controls: int = 0
+
+class ComplianceReport(BaseModel):
+    project_id: int
+    overall_compliance_score: float = 0.0
+    framework_status: Dict[ComplianceFramework, FrameworkStatus] = Field(default_factory=dict)
+    frameworks_assessed: List[ComplianceFramework] = Field(default_factory=list)
+    gaps: List[Dict[str, Any]] = Field(default_factory=list)
+    generated_at: datetime = Field(default_factory=datetime.utcnow)
 
 class ScanRequest(BaseModel):
     """Request to scan artifacts"""

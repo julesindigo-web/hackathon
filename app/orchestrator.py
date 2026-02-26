@@ -16,6 +16,7 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any
 
 from core.config import settings
+from core.websocket import notifier
 from agents.scanner_agent import ScannerAgent, ScanResult
 from agents.analyzer_agent import AnalyzerAgent, AnalysisRequest, AnalysisResult
 from agents.remediation_agent import RemediationAgent, RemediationPlan
@@ -158,6 +159,13 @@ class SecurityOrchestrator:
         try:
             # ========== PHASE 1: SCAN ==========
             logger.info(f"[{scan_id}] Phase 1: Scanning", extra={"component": "Orchestrator"})
+            await notifier.broadcast({
+                "type": "scan_update",
+                "scan_id": scan_id,
+                "project_id": project_id,
+                "phase": "scanning",
+                "message": "Initializing security scanners..."
+            })
 
             raw_vulnerabilities = await self.scanner.scan(
                 project_id=project_id,
@@ -182,6 +190,13 @@ class SecurityOrchestrator:
 
             # ========== PHASE 2: ANALYZE ==========
             logger.info(f"[{scan_id}] Phase 2: Analyzing", extra={"component": "Orchestrator"})
+            await notifier.broadcast({
+                "type": "scan_update",
+                "scan_id": scan_id,
+                "project_id": project_id,
+                "phase": "analyzing",
+                "message": f"Analyzing {len(raw_vulnerabilities)} vulnerabilities with AI..."
+            })
 
             analyzed_vulnerabilities = await self.analyzer.analyze_batch(
                 vulnerabilities=raw_vulnerabilities,
@@ -200,13 +215,6 @@ class SecurityOrchestrator:
             remediation_plans = []
             if auto_remediate:
                 logger.info(f"[{scan_id}] Phase 3: Remediating", extra={"component": "Orchestrator"})
-
-                # Prioritize by priority score (highest first)
-                sorted_vulns = sorted(
-                    analyzed_vulnerabilities,
-                    key=lambda v: v.priority_score,
-                    reverse=True,
-                )
 
                 # Only remediate high-priority vulnerabilities (threshold configurable)
                 high_priority_vulns = [
@@ -239,6 +247,13 @@ class SecurityOrchestrator:
 
             # ========== PHASE 4: COMPLIANCE ==========
             logger.info(f"[{scan_id}] Phase 4: Compliance", extra={"component": "Orchestrator"})
+            await notifier.broadcast({
+                "type": "scan_update",
+                "scan_id": scan_id,
+                "project_id": project_id,
+                "phase": "compliance",
+                "message": "Assessing compliance against SOX, HIPAA, GDPR..."
+            })
 
             compliance_report = await self.compliance.assess_compliance(
                 project_id=project_id,
@@ -253,6 +268,13 @@ class SecurityOrchestrator:
 
             # ========== PHASE 5: MONITORING ==========
             logger.info(f"[{scan_id}] Phase 5: Monitoring", extra={"component": "Orchestrator"})
+            await notifier.broadcast({
+                "type": "scan_update",
+                "scan_id": scan_id,
+                "project_id": project_id,
+                "phase": "monitoring",
+                "message": "Updating security posture metrics..."
+            })
 
             metrics = await self.monitoring.collect_metrics(
                 project_id=project_id,

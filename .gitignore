@@ -70,3 +70,6 @@ tmp/
 # Knowledge graph data
 postgres_data/
 redis_data/
+
+# setup agent
+AGENTS.md

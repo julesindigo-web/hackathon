@@ -29,7 +29,12 @@ class GitLabClient:
             url: GitLab instance URL
         """
         self.client = gitlab.Gitlab(url, private_token=token)
-        self.client.auth()  # Verify authentication
+        # Skip authentication verification for hackathon demo with dummy tokens
+        if not token.startswith("glpat-dummytoken"):
+            try:
+                self.client.auth()  # Verify authentication
+            except Exception as e:
+                logger.warning(f"GitLab authentication failed: {e}. Will continue in degraded mode.")
         logger.info(f"GitLab client initialized for {url}")
 
     @retry(

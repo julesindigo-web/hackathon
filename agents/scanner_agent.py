@@ -74,7 +74,7 @@ class ScannerAgent:
             gitlab_client: GitLab API client (created if None)
             knowledge_graph_client: Knowledge graph for deduplication context (optional)
         """
-        self.gitlab = gitlab_client or GitLabClient()
+        self.gitlab = gitlab_client or GitLabClient(token=settings.gitlab_token, url=settings.gitlab_url)
         self.kg = knowledge_graph_client
         self._dedup_cache: Dict[str, Vulnerability] = {}
 

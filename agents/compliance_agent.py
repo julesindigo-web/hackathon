@@ -213,12 +213,11 @@ class ComplianceAgent:
                 },
             },
         },
-        ComplianceFramework.ISO_27001: {
-            "name": "ISO/IEC 27001",
-            "description": "Information security management system",
+        ComplianceFramework.ISO27001: {
+            "name": "ISO 27001:2022",
             "requirements": {
-                "ISO_A_12": {
-                    "id": "ISO_A_12",
+                "ISO27001_A8_12": {
+                    "id": "ISO27001_A8_12",
                     "name": "Operations Security",
                     "description": "Procedures and responsibilities for secure operations",
                     "vulnerability_types": [
@@ -311,7 +310,7 @@ class ComplianceAgent:
             gitlab_client: GitLab API client
             knowledge_graph_client: Knowledge graph for compliance history
         """
-        self.gitlab = gitlab_client or GitLabClient()
+        self.gitlab = gitlab_client or GitLabClient(token=settings.gitlab_token, url=settings.gitlab_url)
         self.kg = knowledge_graph_client
 
         # Build requirement index for fast lookup

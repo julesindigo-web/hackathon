@@ -100,11 +100,10 @@ class KnowledgeGraphAgent:
         Initialize Knowledge Graph Agent.
 
         Args:
-            gitlab_client: GitLab API client
-            knowledge_graph_client: PostgreSQL knowledge graph client
+            gitlab_client: Optional GitLab API client for fetching context
         """
-        self.gitlab = gitlab_client or GitLabClient()
-        self.kg = knowledge_graph_client or KnowledgeGraphClient()
+        self.gitlab = gitlab_client or GitLabClient(token=settings.gitlab_token, url=settings.gitlab_url)
+        self.kg = knowledge_graph_client or KnowledgeGraphClient(database_url=settings.database_url)
 
         # Initialize ML components for pattern matching
         self._vectorizer = TfidfVectorizer(

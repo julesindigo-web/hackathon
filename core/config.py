@@ -151,6 +151,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+        extra = "allow"
 
     @validator("gitlab_url")
     def validate_gitlab_url(cls, v):

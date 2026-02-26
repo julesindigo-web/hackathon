@@ -188,9 +188,9 @@ class MonitoringAgent:
 
         Args:
             gitlab_client: GitLab API client
-            knowledge_graph_client: Knowledge graph for historical data
+            knowledge_graph_client: Knowledge graph for metrics storage
         """
-        self.gitlab = gitlab_client or GitLabClient()
+        self.gitlab = gitlab_client or GitLabClient(token=settings.gitlab_token, url=settings.gitlab_url)
         self.kg = knowledge_graph_client
 
         # In-memory time-series storage

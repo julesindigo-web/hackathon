@@ -75,13 +75,18 @@ class RemediationAgent:
         FixPattern(
             pattern_id="SQLI_01",
             name="Parameterized Query Conversion",
-            vulnerability_type="sql_injection",
+            target_vulnerability_type="sql_injection",
+            target_language="python",
+            patch_template="replace_with_param_query",
             description="Convert string concatenated SQL to parameterized queries",
             confidence_threshold=0.9,
         ),
         FixPattern(
             pattern_id="SQLI_02",
             name="ORM Query Builder",
+            target_vulnerability_type="sql_injection",
+            target_language="python",
+            patch_template="replace_with_orm",
             description="Replace raw SQL with ORM query builder",
             confidence_threshold=0.85,
         ),
@@ -89,12 +94,18 @@ class RemediationAgent:
         FixPattern(
             pattern_id="XSS_01",
             name="HTML Escape Output",
+            target_vulnerability_type="xss",
+            target_language="html",
+            patch_template="escape_html",
             description="Add HTML escaping to user-controlled output",
             confidence_threshold=0.9,
         ),
         FixPattern(
             pattern_id="XSS_02",
             name="CSP Header Implementation",
+            target_vulnerability_type="xss",
+            target_language="python",
+            patch_template="add_csp_header",
             description="Add Content-Security-Policy headers",
             confidence_threshold=0.8,
         ),
@@ -102,12 +113,18 @@ class RemediationAgent:
         FixPattern(
             pattern_id="CMDI_01",
             name="Input Validation",
+            target_vulnerability_type="command_injection",
+            target_language="python",
+            patch_template="validate_input",
             description="Add strict input validation for shell commands",
             confidence_threshold=0.85,
         ),
         FixPattern(
             pattern_id="CMDI_02",
             name="Safe API Replacement",
+            target_vulnerability_type="command_injection",
+            target_language="python",
+            patch_template="use_safe_api",
             description="Replace dangerous APIs with safe alternatives",
             confidence_threshold=0.9,
         ),
@@ -115,6 +132,9 @@ class RemediationAgent:
         FixPattern(
             pattern_id="PATH_01",
             name="Path Normalization",
+            target_vulnerability_type="path_traversal",
+            target_language="python",
+            patch_template="normalize_path",
             description="Normalize and validate file paths",
             confidence_threshold=0.9,
         ),
@@ -122,12 +142,18 @@ class RemediationAgent:
         FixPattern(
             pattern_id="SECRET_01",
             name="Environment Variable",
+            target_vulnerability_type="hardcoded_secret",
+            target_language="python",
+            patch_template="use_env_var",
             description="Replace hardcoded secrets with environment variables",
             confidence_threshold=0.95,
         ),
         FixPattern(
             pattern_id="SECRET_02",
             name="Secrets Manager Integration",
+            target_vulnerability_type="hardcoded_secret",
+            target_language="python",
+            patch_template="use_secrets_manager",
             description="Integrate with secrets management service",
             confidence_threshold=0.8,
         ),
@@ -135,6 +161,9 @@ class RemediationAgent:
         FixPattern(
             pattern_id="DESER_01",
             name="Type Validation",
+            target_vulnerability_type="insecure_deserialization",
+            target_language="python",
+            patch_template="validate_type",
             description="Add type checking before deserialization",
             confidence_threshold=0.85,
         ),
@@ -142,6 +171,9 @@ class RemediationAgent:
         FixPattern(
             pattern_id="XXE_01",
             name="Disable External Entities",
+            target_vulnerability_type="xxe",
+            target_language="python",
+            patch_template="disable_entities",
             description="Configure XML parser to disable external entities",
             confidence_threshold=0.9,
         ),
@@ -149,6 +181,9 @@ class RemediationAgent:
         FixPattern(
             pattern_id="SSRF_01",
             name="URL Validation",
+            target_vulnerability_type="ssrf",
+            target_language="python",
+            patch_template="validate_url",
             description="Validate and whitelist allowed URLs",
             confidence_threshold=0.85,
         ),
@@ -156,22 +191,30 @@ class RemediationAgent:
         FixPattern(
             pattern_id="CRYPTO_01",
             name="Strong Algorithm Migration",
+            target_vulnerability_type="cryptographic_failure",
+            target_language="python",
+            patch_template="use_strong_crypto",
             description="Upgrade to strong encryption algorithms",
             confidence_threshold=0.9,
         ),
-        # Broken Access Control
+        FixPattern(
+            pattern_id="CRYPTO_02",
+            name="Secure Random Generation",
+            target_vulnerability_type="cryptographic_failure",
+            target_language="python",
+            patch_template="use_secure_random",
+            description="Use cryptographically secure PRNG",
+            confidence_threshold=0.95,
+        ),
+        # Broken Authentication
         FixPattern(
             pattern_id="AUTH_01",
-            name="Authorization Check",
-            description="Add proper authorization checks",
+            name="Password Hashing",
+            target_vulnerability_type="broken_authentication",
+            target_language="python",
+            patch_template="use_bcrypt",
+            description="Implement strong password hashing (bcrypt/argon2)",
             confidence_threshold=0.9,
-        ),
-        # Security Misconfiguration
-        FixPattern(
-            pattern_id="CONFIG_01",
-            name="Secure Configuration",
-            description="Apply security best practice configurations",
-            confidence_threshold=0.8,
         ),
     ]
 
@@ -187,7 +230,7 @@ class RemediationAgent:
             gitlab_client: GitLab API client
             knowledge_graph_client: Knowledge graph for pattern learning
         """
-        self.gitlab = gitlab_client or GitLabClient()
+        self.gitlab = gitlab_client or GitLabClient(token=settings.gitlab_token, url=settings.gitlab_url)
         self.kg = knowledge_graph_client
 
         # Pattern registry by vulnerability type
@@ -207,9 +250,9 @@ class RemediationAgent:
     def _build_pattern_index(self) -> None:
         """Build index of patterns by vulnerability type for fast lookup."""
         for pattern in self.FIX_PATTERNS:
-            if pattern.vulnerability_type not in self._pattern_index:
-                self._pattern_index[pattern.vulnerability_type] = []
-            self._pattern_index[pattern.vulnerability_type].append(pattern)
+            if pattern.target_vulnerability_type not in self._pattern_index:
+                self._pattern_index[pattern.target_vulnerability_type] = []
+            self._pattern_index[pattern.target_vulnerability_type].append(pattern)
 
         logger.debug(
             f"Pattern index built: {list(self._pattern_index.keys())}",

@@ -14,12 +14,14 @@ import logging
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 
-from fastapi import FastAPI, BackgroundTasks, HTTPException, Depends
+from fastapi import FastAPI, BackgroundTasks, HTTPException, Depends, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import uvicorn
+import json
 
 from core.config import settings
+from core.websocket import notifier
 from app.orchestrator import SecurityOrchestrator
 from agents.monitoring_agent import MonitoringAgent
 from agents.knowledge_graph_agent import KnowledgeGraphAgent
@@ -185,13 +187,18 @@ async def initialize_system():
     logger.info("Initializing SecurAI Guardian system...", extra={"component": "main"})
 
     try:
+        from core.gitlab_client import GitLabClient
+        
+        # Initialize common clients
+        gitlab_client = GitLabClient(token=settings.gitlab_token, url=settings.gitlab_url)
+        
         # Initialize agents
-        scanner = ScannerAgent()
-        analyzer = AnalyzerAgent()
-        remediation = RemediationAgent()
-        compliance = ComplianceAgent()
-        monitoring = MonitoringAgent()
-        kg_agent = KnowledgeGraphAgent()
+        scanner = ScannerAgent(gitlab_client=gitlab_client)
+        analyzer = AnalyzerAgent(gitlab_client=gitlab_client)
+        remediation = RemediationAgent(gitlab_client=gitlab_client)
+        compliance = ComplianceAgent(gitlab_client=gitlab_client)
+        monitoring = MonitoringAgent(gitlab_client=gitlab_client)
+        kg_agent = KnowledgeGraphAgent(gitlab_client=gitlab_client)
 
         # Initialize orchestrator
         _orchestrator = SecurityOrchestrator(
@@ -249,6 +256,19 @@ async def health_check():
 
     return health_status
 
+
+@app.websocket("/api/v1/ws/dashboard")
+async def websocket_dashboard(websocket: WebSocket):
+    """
+    WebSocket endpoint for real-time dashboard updates.
+    """
+    await notifier.connect(websocket)
+    try:
+        while True:
+            # Keep connection alive and wait for messages from client if any
+            data = await websocket.receive_text()
+    except WebSocketDisconnect:
+        notifier.disconnect(websocket)
 
 @app.post("/api/v1/scan", response_model=ScanResponse)
 async def trigger_scan(
