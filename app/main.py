@@ -10,6 +10,7 @@ Quality Target: 10/10 transcendent
 """
 
 import asyncio
+import logging
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 
@@ -28,6 +29,13 @@ from agents.scanner_agent import ScannerAgent
 from agents.analyzer_agent import AnalyzerAgent
 from agents.remediation_agent import RemediationAgent
 from agents.compliance_agent import ComplianceAgent
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 # Initialize FastAPI app
 app = FastAPI(

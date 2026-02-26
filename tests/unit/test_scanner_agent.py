@@ -11,6 +11,7 @@ Tests coverage:
 import pytest
 import json
 from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from agents.scanner_agent import ScannerAgent, ScanResult
 

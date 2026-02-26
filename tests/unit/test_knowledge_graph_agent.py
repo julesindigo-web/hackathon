@@ -325,6 +325,7 @@ class TestKnowledgeGraphAgentPatternMatching:
                 external_id="VULN-002",
                 project_id="project-123",
                 properties={"title": "Similar", "description": "Similar desc"}
+            )
         ]
         mock_knowledge_graph.find_similar_vulnerabilities.return_value = [
             (similar_nodes[0], 0.65)
@@ -1001,3 +1002,4 @@ class TestKnowledgeGraphAgentIntegration:
         # Should have statistics
         assert patterns["total_occurrences"] >= 10
         assert patterns["remediation_success_rate"] >= 0
+ 

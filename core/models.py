@@ -34,6 +34,15 @@ class TriageAction(str, Enum):
     DISCARD = "discard"
 
 
+class RemediationStatus(str, Enum):
+    """Remediation plan status"""
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    READY_FOR_REVIEW = "ready_for_review"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
 class ComplianceFramework(str, Enum):
     """Compliance frameworks"""
     SOX = "SOX"

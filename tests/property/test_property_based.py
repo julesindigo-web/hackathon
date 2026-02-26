@@ -565,7 +565,7 @@ class TestOrchestratorProperties:
         st.lists(vulnerability_strategy(), min_size=0, max_size=100),
         st.booleans()
     )
-    def test_pipeline_output_consistency(self, vulnerabilities, auto_remediate):
+    async def test_pipeline_output_consistency(self, vulnerabilities, auto_remediate):
         """Test pipeline produces consistent output structure."""
         # Property: Output always has same keys regardless of input
 

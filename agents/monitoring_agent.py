@@ -27,6 +27,7 @@ from core.models import (
     Vulnerability,
     AnalyzedVulnerability,
     RemediationPlan,
+    RemediationStatus,
     SecurityMetrics,
     Alert,
     AlertSeverity,
